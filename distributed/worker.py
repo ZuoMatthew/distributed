@@ -103,8 +103,9 @@ class WorkerBase(ServerNode):
             local_dir = os.path.abspath(local_dir)
             if not os.path.exists(local_dir):
                 os.mkdir(local_dir)
-#         self.local_dir = tempfile.mkdtemp(prefix='worker-', dir=local_dir)
-        self.local_dir = local_dir
+            self.local_dir = local_dir
+        else:
+            self.local_dir = tempfile.mkdtemp(prefix='worker-', dir=local_dir)
 
         self.security = security or Security()
         assert isinstance(self.security, Security)
