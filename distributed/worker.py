@@ -391,7 +391,8 @@ class WorkerBase(ServerNode):
         else:
             self.executor.shutdown(wait=False)
         if os.path.exists(self.local_dir):
-            shutil.rmtree(self.local_dir)
+            if self.local_dir.startswith('worker-'):
+                shutil.rmtree(self.local_dir)
 
         for k, v in self.services.items():
             v.stop()
