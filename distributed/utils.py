@@ -15,6 +15,7 @@ import shutil
 import socket
 from time import sleep
 from importlib import import_module
+import zipfile
 
 import six
 import sys
@@ -837,6 +838,8 @@ def import_file(path):
                 names_to_import.append(pkg.project_name)
         elif ext == '.zip':
             names_to_import.append(name)
+            with zipfile.ZipFile(path) as zf:
+                zf.extractall(directory)
 
     loaded = []
     if not names_to_import:
