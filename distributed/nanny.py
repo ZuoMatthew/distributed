@@ -393,7 +393,8 @@ class WorkerProcess(object):
             self.process = None
             # Best effort to clean up worker directory
             if self.worker_dir and os.path.exists(self.worker_dir):
-                shutil.rmtree(self.worker_dir, ignore_errors=True)
+                if self.worker_dir.startswith('worker-'):
+                    shutil.rmtree(self.worker_dir, ignore_errors=True)
             self.worker_dir = None
             # User hook
             if self.on_exit is not None:
