@@ -35,6 +35,7 @@ from distributed.client import (Client, Future, wait, as_completed, tokenize,
                                 _get_global_client, default_client,
                                 ensure_default_get, futures_of,
                                 temp_default_client)
+from distributed.compatibility import PY3
 
 from distributed.metrics import time
 from distributed.scheduler import Scheduler, KilledWorker
@@ -4469,6 +4470,7 @@ def test_secede_simple(c, s, a):
 @slow
 @gen_cluster(client=True, ncores=[('127.0.0.1', 1)] * 2, timeout=60)
 def test_secede_balances(c, s, a, b):
+    count = threading.active_count()
     def f(x):
         client = get_client()
         sleep(0.01)  # do some work
@@ -4481,7 +4483,7 @@ def test_secede_balances(c, s, a, b):
     start = time()
     while not all(f.status == 'finished' for f in futures):
         yield gen.sleep(0.01)
-        assert threading.active_count() < 50
+        assert threading.active_count() < count + 50
 
     # assert 0.005 < s.task_duration['f'] < 0.1
     assert len(a.log) < 2 * len(b.log)
@@ -4790,6 +4792,24 @@ def test_client_async_before_loop_starts():
     loop = IOLoop()
     client = Client(asynchronous=True, loop=loop)
     assert client.asynchronous
+
+
+@slow
+@gen_cluster(client=True, Worker=Nanny if PY3 else Worker, timeout=60)
+def test_nested_compute(c, s, a, b):
+    def fib(x):
+        assert get_worker().get_current_task()
+        if x < 2:
+            return x
+        a = delayed(fib)(x - 1)
+        b = delayed(fib)(x - 2)
+        c = a + b
+        return c.compute()
+
+    future = c.submit(fib, 8)
+    result = yield future
+    assert result == 21
+    assert len(s.transition_log) > 50
 
 
 if sys.version_info >= (3, 5):
